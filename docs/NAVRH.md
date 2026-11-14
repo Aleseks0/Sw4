@@ -305,10 +305,16 @@ Fáze 1–4 nejsou na webu závislé – aplikace bude použitelná dřív, než
 
 ---
 
-## 12. Otevřené otázky
+## 12. Rozhodnutí (2026-11-14)
 
-1. **Varianta propojení** – A (fronta změn se schválením na Macu), nebo B (D1 hned)?
-2. **Kdo bude aplikaci používat** – jen vy, nebo i další členové rodiny (pak víc účtů a role)?
-3. **Distribuce** – APK ke stažení z webu (za heslem), nebo Google Play (interní test / veřejně)?
-4. **Fotky na webu** – mají se schválené fotky zobrazovat i na veřejném webu, nebo jen přihlášeným?
-5. **Vlastní doména** místo `*.workers.dev`? (aplikace pak bude mít pevnou adresu)
+1. **Propojení: varianta A** – změny z telefonu jdou do fronty a schvalují se na Macu
+   (`tools/stahni_zmeny.py`), teprve pak se web znovu nasadí.
+2. **Uživatelé: i další členové rodiny** – víc účtů s rolemi čtenář / editor / admin.
+   Každá změna nese autora, při schvalování je vidět, kdo ji navrhl.
+3. **Distribuce: APK soubor** – ke stažení z webu za přihlášením; aplikace sama
+   upozorní na novou verzi (`/api/v1/app-version`). Sestavení a podpis v GitHub Actions.
+4. **Fotky i na veřejném webu** – schválené fotky se zobrazují všem. Výjimka:
+   fotky, kde je označená žijící osoba, jen přihlášeným, pokud je admin při
+   schválení výslovně neuvolní (stejné pravidlo jako u přesných dat žijících).
+5. **Vlastní doména** – zatím zůstává `*.workers.dev` (zdarma). Doména jde
+   kdykoli doplnit; v aplikaci bude adresa webu v nastavení, takže změna nic nerozbije.
