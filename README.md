@@ -16,6 +16,19 @@ Návrh a plán: [docs/NAVRH.md](docs/NAVRH.md)
   a prameny, export do GEDCOM 5.5.1 / 7.0. Rodokmen zůstává v telefonu
   i po restartu.
 
+## Verze 0.2 – nový vzhled
+
+Spodní lišta Domů · Osoby · Strom · Více, úvodní přehled s výročími v rodu,
+detail osoby jako životní příběh na časové ose, grafický strom předků
+i potomků (přiblížení a posun prsty), světlý i tmavý režim.
+
+| Domů | Osoby | Detail | Strom |
+|---|---|---|---|
+| ![](docs/snimky/1-domu.png) | ![](docs/snimky/2-osoby.png) | ![](docs/snimky/3-detail.png) | ![](docs/snimky/4-strom.png) |
+
+Snímky jsou ze smyšleného rodokmenu. Vytvoří se bez emulátoru:
+`./gradlew :app:testDebugUnitTest` → `app/build/snimky/`.
+
 ## Stažení APK
 
 Každé odeslání na GitHub sestaví APK v **Actions → Sestavení → Artifacts

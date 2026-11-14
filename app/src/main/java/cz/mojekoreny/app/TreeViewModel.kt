@@ -24,6 +24,10 @@ data class UiState(
     val fileName: String? = null,
     val loading: Boolean = false,
     val message: String? = null,
+    /** Výchozí osoba (proband) – střed stromu a úvodní obrazovky. */
+    val homeId: String? = null,
+    /** Naposledy otevřené osoby, nejnovější první. */
+    val recent: List<String> = emptyList(),
 )
 
 /**
@@ -37,16 +41,39 @@ class TreeViewModel(app: Application) : AndroidViewModel(app) {
 
     private val stored = File(app.filesDir, "rodokmen.ged")
     private val storedName = File(app.filesDir, "rodokmen.nazev")
+    private val prefs = app.getSharedPreferences("nastaveni", android.content.Context.MODE_PRIVATE)
+
+    private fun loadPrefs(tree: GedcomTree?): Pair<String?, List<String>> {
+        val home = prefs.getString("home", null)?.takeIf { tree?.person(it) != null } ?: tree?.persons?.firstOrNull()?.id
+        val recent = prefs.getString("recent", "").orEmpty().split('|').filter { it.isNotEmpty() && tree?.person(it) != null }
+        return home to recent
+    }
+
+    fun setHome(id: String) {
+        prefs.edit().putString("home", id).apply()
+        _state.update { it.copy(homeId = id, message = "Výchozí osoba nastavena.") }
+    }
+
+    fun visited(id: String) {
+        _state.update { s ->
+            val list = (listOf(id) + s.recent.filter { it != id }).take(12)
+            prefs.edit().putString("recent", list.joinToString("|")).apply()
+            s.copy(recent = list)
+        }
+    }
 
     init {
         if (stored.exists()) {
             viewModelScope.launch {
                 _state.update { it.copy(loading = true) }
                 val tree = withContext(Dispatchers.IO) { runCatching { GedcomReader.read(stored.readBytes()) } }
+                val (home, recent) = loadPrefs(tree.getOrNull())
                 _state.update {
                     it.copy(
                         loading = false,
                         tree = tree.getOrNull(),
+                        homeId = home,
+                        recent = recent,
                         fileName = runCatching { storedName.readText() }.getOrNull(),
                         message = tree.exceptionOrNull()?.let { e -> "Uložený rodokmen nejde načíst: ${e.message}" },
                     )
@@ -74,8 +101,10 @@ class TreeViewModel(app: Application) : AndroidViewModel(app) {
             _state.update { s ->
                 result.fold(
                     onSuccess = { (tree, name) ->
+                        prefs.edit().remove("home").remove("recent").apply()
                         s.copy(
                             loading = false, tree = tree, fileName = name,
+                            homeId = tree.persons.firstOrNull()?.id, recent = emptyList(),
                             message = "Načteno ${tree.persons.size} osob a ${tree.families.size} rodin (${tree.header.encoding}).",
                         )
                     },
@@ -115,5 +144,5 @@ class TreeViewModel(app: Application) : AndroidViewModel(app) {
 }
 
 internal object BuildConfigInfo {
-    const val VERSION = "0.1.0"
+    const val VERSION = "0.2.0"
 }

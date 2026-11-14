@@ -1,0 +1,101 @@
+0 HEAD
+1 SOUR RODOKMEN
+2 NAME Rodinný web
+1 GEDC
+2 VERS 5.5.1
+2 FORM LINEAGE-LINKED
+1 CHAR UTF-8
+1 LANG Czech
+1 SUBM @U1@
+0 @U1@ SUBM
+1 NAME Rodina
+0 @I1@ INDI
+1 NAME Jan /Novák/
+2 GIVN Jan
+2 SURN Novák
+1 SEX M
+1 BIRT
+2 DATE 9 MAY 1849
+2 PLAC Drahlín čp. 6, Příbram, Středočeský kraj, Česko
+2 SOUR @S1@
+3 PAGE fol. 112
+1 CHR
+2 DATE 10 MAY 1849
+2 PLAC Hluboš
+1 OCCU horník
+2 DATE BET 1873 AND 1900
+2 PLAC Dřín
+1 RELI bez vyznání
+2 DATE 1921
+1 DEAT
+2 DATE ABT 1925
+1 FAMS @F1@
+1 FAMC @F0@
+1 NOTE Horník na šachtě Marie Anna (čís. VI) u Dřína. Tato poznámka je schválně dlouhá,
+2 CONC  aby se musela při zápisu zalomit pomocí řádků CONC – přesně tak, jak to dělají
+2 CONC  starší genealogické programy, které mají omezenou délku řádku na 255 znaků. Ž
+2 CONC luťoučký kůň úpěl ďábelské ódy.
+2 CONT Druhý řádek poznámky.
+1 OBJE @M1@
+1 _UID jan-novak-1849
+1 _MOJE vlastní značka
+2 _VNOR vnořená
+0 @I2@ INDI
+1 NAME Marie /Nováková/
+1 NAME Marie /Melicharová/
+2 TYPE birth
+1 SEX F
+1 BIRT
+2 DATE 1850
+2 PLAC Drahlín
+1 FAMS @F1@
+1 _UID marie-melicharova-1850
+0 @I3@ INDI
+1 NAME Josef /Novák/
+1 SEX M
+1 BIRT
+2 DATE 2 MAR 1874
+2 PLAC Dřín
+1 FAMC @F1@
+2 PEDI birth
+1 _UID josef-novak-1874
+0 @I4@ INDI
+1 NAME Matěj /Novák/
+1 SEX M
+1 BIRT
+2 DATE 1809
+1 FAMS @F0@
+0 @F0@ FAM
+1 HUSB @I4@
+1 CHIL @I1@
+0 @F1@ FAM
+1 HUSB @I1@
+1 WIFE @I2@
+1 CHIL @I3@
+2 _FREL Natural
+2 _MREL Natural
+1 MARR
+2 DATE 4 FEB 1873
+2 PLAC Drahlín
+2 SOUR @S2@
+1 NOTE @N1@
+0 @S1@ SOUR
+1 TITL Matrika N 1830–1850, fara Hluboš
+1 AUTH Římskokatolická fara Hluboš
+1 PUBL eBadatelna
+1 REPO @R1@
+2 CALN 2156
+1 NOTE Snímek: https://ebadatelna.example/d/1/1
+0 @S2@ SOUR
+1 TITL Matrika O 1860–1880, fara Hluboš
+1 TEXT Jan Novák, horník z Drahlína čp. 6, syn Matěje Nováka
+2 CONT a Marie Melicharová, dcera …
+0 @R1@ REPO
+1 NAME Státní oblastní archiv v Praze
+1 WWW https://ebadatelna.soapraha.cz
+0 @N1@ NOTE Sňatek zapsán v matrice O fol. 45.
+0 @M1@ OBJE
+1 FILE fotky/jan-novak.jpg
+2 FORM jpg
+2 TITL Jan Novák kolem roku 1900
+0 TRLR
