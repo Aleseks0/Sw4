@@ -5,40 +5,24 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.ArrowBack
-import androidx.compose.material.icons.automirrored.outlined.MenuBook
-import androidx.compose.material.icons.automirrored.outlined.Notes
-import androidx.compose.material.icons.outlined.AccountTree
-import androidx.compose.material.icons.outlined.FamilyRestroom
-import androidx.compose.material.icons.outlined.Home
-import androidx.compose.material.icons.outlined.Timeline
-import androidx.compose.material3.AssistChip
-import androidx.compose.material3.AssistChipDefaults
-import androidx.compose.material3.FilledIconButton
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -48,17 +32,18 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import cz.mojekoreny.app.ui.components.PersonAvatar
-import cz.mojekoreny.app.ui.components.PersonTile
-import cz.mojekoreny.app.ui.components.SectionCard
-import cz.mojekoreny.app.ui.components.icon
-import cz.mojekoreny.app.ui.components.sexColors
+import androidx.compose.foundation.BorderStroke
+import cz.mojekoreny.app.ui.components.PersonCard
+import cz.mojekoreny.app.ui.components.Pill
+import cz.mojekoreny.app.ui.components.SectionHeading
+import cz.mojekoreny.app.ui.components.SubHeading
+import cz.mojekoreny.app.ui.components.TwoColumns
+import cz.mojekoreny.app.ui.components.WebCard
+import cz.mojekoreny.app.ui.theme.LocalAppColors
 import cz.mojekoreny.gedcom.GedcomTree
 import cz.mojekoreny.gedcom.LifeItem
 import cz.mojekoreny.gedcom.LifeKind
@@ -70,16 +55,17 @@ import cz.mojekoreny.gedcom.lifeStory
 import cz.mojekoreny.gedcom.siblingsOf
 import cz.mojekoreny.gedcom.yearsCz
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun PersonScreen(
     tree: GedcomTree,
     person: Person,
     isHome: Boolean,
-    onBack: () -> Unit,
     onOpenPerson: (String) -> Unit,
     onOpenTree: (String) -> Unit,
     onSetHome: (String) -> Unit,
 ) {
+    val cs = MaterialTheme.colorScheme
     val story = remember(tree, person) { tree.lifeStory(person) }
     val parents = remember(tree, person) { tree.parentsOf(person) }
     val siblings = remember(tree, person) { tree.siblingsOf(person) }
@@ -89,75 +75,106 @@ fun PersonScreen(
         (person.citations + person.events.flatMap { it.citations }).mapNotNull { it.sourceId }.distinct().mapNotNull(tree::source)
     }
 
-    LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 32.dp)) {
-        item { Header(person, isHome, onBack, { onOpenTree(person.id) }, { onSetHome(person.id) }) }
+    LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 32.dp)) {
+        item {
+            Text("Osoba", style = MaterialTheme.typography.bodyMedium, color = cs.onSurfaceVariant)
+            Text(person.name.full.ifEmpty { "(beze jména)" }, style = MaterialTheme.typography.headlineLarge)
+            person.birthSurname?.let {
+                Text(
+                    if (person.sex == Sex.FEMALE) "rozená $it" else "rodné příjmení $it",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = cs.onSurfaceVariant,
+                )
+            }
+            Spacer(Modifier.height(10.dp))
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                if (person.lifeSpan.isNotEmpty()) Pill(person.lifeSpan)
+                person.ageAtDeath()?.let {
+                    Pill("dožil${if (person.sex == Sex.FEMALE) "a" else ""} se ${yearsCz(it)}")
+                }
+                if (isHome) Pill("výchozí osoba rodokmenu", cs.tertiaryContainer, cs.onTertiaryContainer)
+            }
+            Spacer(Modifier.height(14.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Button(onClick = { onOpenTree(person.id) }, shape = MaterialTheme.shapes.medium) { Text("Strom a vějíř") }
+                if (!isHome) {
+                    OutlinedButton(
+                        onClick = { onSetHome(person.id) },
+                        shape = MaterialTheme.shapes.medium,
+                        border = BorderStroke(1.dp, cs.outlineVariant),
+                    ) { Text("Nastavit jako výchozí") }
+                }
+            }
+        }
 
         if (story.isNotEmpty()) {
+            item { SectionHeading("Životní příběh") }
             item {
-                SectionCard("Životní příběh", Icons.Outlined.Timeline, Modifier.padding(horizontal = 16.dp).padding(top = 12.dp)) {
-                    story.forEachIndexed { i, item ->
-                        TimelineRow(item, first = i == 0, last = i == story.lastIndex) {
-                            item.relatedPersonId?.let(onOpenPerson)
+                WebCard {
+                    Column(Modifier.padding(horizontal = 14.dp, vertical = 10.dp)) {
+                        story.forEachIndexed { i, item ->
+                            TimelineRow(item, last = i == story.lastIndex) { item.relatedPersonId?.let(onOpenPerson) }
                         }
                     }
                 }
             }
         }
 
+        item { SectionHeading("Rodina") }
         item {
-            SectionCard("Rodina", Icons.Outlined.FamilyRestroom, Modifier.padding(horizontal = 16.dp).padding(top = 12.dp)) {
+            Column {
                 var any = false
                 if (parents.isNotEmpty()) {
                     any = true
-                    FamilyRow("Rodiče", parents.map { it to if (it.sex == Sex.FEMALE) "matka" else "otec" }, onOpenPerson)
+                    SubHeading("Rodiče")
+                    TwoColumns(parents) { p, m ->
+                        PersonCard(p, m, caption = if (p.sex == Sex.FEMALE) "matka" else "otec") { onOpenPerson(p.id) }
+                    }
                 }
                 families.forEach { f ->
                     val partner = (if (f.husband == person.id) f.wife else f.husband)?.let(tree::person)
                     val kids = f.children.mapNotNull(tree::person)
-                    val items = buildList {
-                        partner?.let { add(it to if (it.sex == Sex.FEMALE) "manželka" else "manžel") }
-                        kids.forEach { add(it to if (it.sex == Sex.FEMALE) "dcera" else if (it.sex == Sex.MALE) "syn" else "dítě") }
-                    }
-                    if (items.isNotEmpty()) {
+                    if (partner != null || kids.isNotEmpty()) {
                         any = true
-                        val title = buildString {
-                            append(if (partner != null) "Manželství" else "Děti")
-                            f.marriage?.parsedDate?.year?.let { append(" · sňatek $it") }
+                        SubHeading(
+                            buildString {
+                                append(if (partner != null) "Manželství" else "Děti")
+                                f.marriage?.parsedDate?.year?.let { append(" · sňatek $it") }
+                            },
+                        )
+                        val items = buildList {
+                            partner?.let { add(it to if (it.sex == Sex.FEMALE) "manželka" else "manžel") }
+                            kids.forEach { add(it to if (it.sex == Sex.FEMALE) "dcera" else if (it.sex == Sex.MALE) "syn" else "dítě") }
                         }
-                        FamilyRow(title, items, onOpenPerson)
+                        TwoColumns(items) { (p, label), m -> PersonCard(p, m, caption = label) { onOpenPerson(p.id) } }
                     }
                 }
                 if (siblings.isNotEmpty()) {
                     any = true
-                    FamilyRow("Sourozenci", siblings.map { it to if (it.sex == Sex.FEMALE) "sestra" else "bratr" }, onOpenPerson)
+                    SubHeading("Sourozenci")
+                    TwoColumns(siblings) { p, m ->
+                        PersonCard(p, m, caption = if (p.sex == Sex.FEMALE) "sestra" else "bratr") { onOpenPerson(p.id) }
+                    }
                 }
-                if (!any) {
-                    Text(
-                        "Zatím bez zapsaných příbuzných.",
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(horizontal = 16.dp),
-                    )
-                }
+                if (!any) Text("Zatím bez zapsaných příbuzných.", color = cs.onSurfaceVariant)
             }
         }
 
         if (notes.isNotEmpty()) {
-            item {
-                SectionCard("Poznámky", Icons.AutoMirrored.Outlined.Notes, Modifier.padding(horizontal = 16.dp).padding(top = 12.dp)) {
-                    notes.forEach { ExpandableText(it) }
-                }
-            }
+            item { SectionHeading("Poznámky") }
+            item { WebCard { notes.forEach { ExpandableText(it) } } }
         }
 
         if (sources.isNotEmpty()) {
+            item { SectionHeading("Prameny") }
             item {
-                SectionCard("Prameny", Icons.AutoMirrored.Outlined.MenuBook, Modifier.padding(horizontal = 16.dp).padding(top = 12.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     sources.forEach { s ->
-                        Column(Modifier.padding(horizontal = 16.dp, vertical = 6.dp)) {
-                            Text(s.title ?: s.abbreviation ?: s.id, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
-                            val sub = listOfNotNull(s.author, s.publication).joinToString(" · ")
-                            if (sub.isNotEmpty()) {
-                                Text(sub, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        WebCard {
+                            Column(Modifier.padding(14.dp)) {
+                                Text(s.title ?: s.abbreviation ?: s.id, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold)
+                                val sub = listOfNotNull(s.author, s.publication).joinToString(" · ")
+                                if (sub.isNotEmpty()) Text(sub, style = MaterialTheme.typography.bodyMedium, color = cs.onSurfaceVariant)
                             }
                         }
                     }
@@ -171,122 +188,32 @@ private fun Note.resolve(tree: GedcomTree): String? =
     text ?: noteId?.let { id -> tree.notes.firstOrNull { it.id == id }?.text }
 
 @Composable
-private fun Header(person: Person, isHome: Boolean, onBack: () -> Unit, onTree: () -> Unit, onSetHome: () -> Unit) {
-    val (strong, _, container) = sexColors(person.sex)
+private fun TimelineRow(item: LifeItem, last: Boolean, onClick: () -> Unit) {
     val cs = MaterialTheme.colorScheme
-    Box(
-        Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(bottomStart = 32.dp, bottomEnd = 32.dp))
-            .background(Brush.verticalGradient(listOf(container, cs.surface))),
-    ) {
-        Column(
-            Modifier.fillMaxWidth().windowInsetsPadding(WindowInsets.statusBars).padding(bottom = 14.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Row(Modifier.fillMaxWidth().padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                FilledIconButton(
-                    onClick = onBack,
-                    colors = IconButtonDefaults.filledIconButtonColors(containerColor = cs.surface.copy(alpha = 0.8f), contentColor = cs.onSurface),
-                ) { Icon(Icons.AutoMirrored.Outlined.ArrowBack, "Zpět") }
-                Spacer(Modifier.weight(1f))
-            }
-            PersonAvatar(person, 76.dp, ring = true)
-            Spacer(Modifier.height(10.dp))
-            Text(
-                person.name.full.ifEmpty { "(beze jména)" },
-                style = MaterialTheme.typography.headlineSmall,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.padding(horizontal = 24.dp),
-            )
-            person.birthSurname?.let {
-                Text(if (person.sex == Sex.FEMALE) "rozená $it" else "rodné příjmení $it", style = MaterialTheme.typography.bodyMedium, color = cs.onSurfaceVariant)
-            }
-            Spacer(Modifier.height(8.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                if (person.lifeSpan.isNotEmpty()) Pill(person.lifeSpan, strong)
-                person.ageAtDeath()?.let { Pill("dožil${if (person.sex == Sex.FEMALE) "a" else ""} se ${yearsCz(it)}", cs.secondary) }
-            }
-            Spacer(Modifier.height(10.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                AssistChip(
-                    onClick = onTree,
-                    label = { Text("Strom") },
-                    leadingIcon = { Icon(Icons.Outlined.AccountTree, null, Modifier.size(18.dp)) },
-                    colors = AssistChipDefaults.assistChipColors(containerColor = cs.surfaceContainerLowest),
-                )
-                AssistChip(
-                    onClick = onSetHome,
-                    enabled = !isHome,
-                    label = { Text(if (isHome) "Výchozí osoba" else "Nastavit jako výchozí") },
-                    leadingIcon = { Icon(Icons.Outlined.Home, null, Modifier.size(18.dp)) },
-                    colors = AssistChipDefaults.assistChipColors(containerColor = cs.surfaceContainerLowest),
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun Pill(text: String, color: Color) {
-    Surface(shape = RoundedCornerShape(50), color = color.copy(alpha = 0.14f)) {
-        Text(
-            text,
-            color = color,
-            style = MaterialTheme.typography.labelLarge,
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 3.dp),
-        )
-    }
-}
-
-@Composable
-private fun TimelineRow(item: LifeItem, first: Boolean, last: Boolean, onClick: () -> Unit) {
-    val cs = MaterialTheme.colorScheme
-    val accent = when (item.kind) {
-        LifeKind.BIRTH, LifeKind.BAPTISM, LifeKind.CHILD -> cs.primary
-        LifeKind.MARRIAGE -> cs.tertiary
+    val app = LocalAppColors.current
+    val dot: Color = when (item.kind) {
+        LifeKind.BIRTH, LifeKind.BAPTISM, LifeKind.CHILD -> app.doc
+        LifeKind.MARRIAGE, LifeKind.DIVORCE -> cs.primary
         LifeKind.DEATH, LifeKind.BURIAL -> cs.outline
-        else -> cs.secondary
+        else -> app.probable
     }
     Row(
         Modifier
             .fillMaxWidth()
             .height(IntrinsicSize.Min)
-            .then(if (item.relatedPersonId != null) Modifier.clickable(onClick = onClick) else Modifier)
-            .padding(horizontal = 16.dp),
+            .then(if (item.relatedPersonId != null) Modifier.clickable(onClick = onClick) else Modifier),
     ) {
-        Column(Modifier.width(32.dp).fillMaxHeight(), horizontalAlignment = Alignment.CenterHorizontally) {
-            Box(Modifier.width(2.dp).height(8.dp).background(if (first) Color.Transparent else cs.outlineVariant))
-            Box(
-                Modifier.size(28.dp).clip(CircleShape).background(accent.copy(alpha = 0.14f)),
-                contentAlignment = Alignment.Center,
-            ) { Icon(item.kind.icon(), null, tint = accent, modifier = Modifier.size(15.dp)) }
+        Column(Modifier.width(22.dp).fillMaxHeight(), horizontalAlignment = Alignment.CenterHorizontally) {
+            Spacer(Modifier.height(7.dp))
+            Box(Modifier.size(11.dp).clip(CircleShape).background(dot))
             Box(Modifier.width(2.dp).weight(1f).background(if (last) Color.Transparent else cs.outlineVariant))
         }
-        Spacer(Modifier.width(12.dp))
-        Column(Modifier.weight(1f).padding(top = 6.dp, bottom = 10.dp)) {
-            item.date?.let {
-                Text(it.toCzech(), style = MaterialTheme.typography.labelMedium, color = accent)
-            }
-            Text(item.title, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
+        Column(Modifier.weight(1f).padding(bottom = if (last) 2.dp else 14.dp)) {
+            item.date?.let { Text(it.toCzech(), style = MaterialTheme.typography.labelLarge, color = cs.primary) }
+            Text(item.title, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold)
             val sub = listOfNotNull(item.place, item.detail).joinToString(" · ")
-            if (sub.isNotEmpty()) {
-                Text(sub, style = MaterialTheme.typography.bodySmall, color = cs.onSurfaceVariant)
-            }
+            if (sub.isNotEmpty()) Text(sub, style = MaterialTheme.typography.bodyMedium, color = cs.onSurfaceVariant)
         }
-    }
-}
-
-@Composable
-private fun FamilyRow(title: String, people: List<Pair<Person, String>>, onOpen: (String) -> Unit) {
-    Text(
-        title,
-        style = MaterialTheme.typography.labelLarge,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = Modifier.padding(horizontal = 14.dp).padding(top = 6.dp, bottom = 6.dp),
-    )
-    LazyRow(contentPadding = PaddingValues(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        items(people, key = { it.first.id }) { (p, label) -> PersonTile(p, label, { onOpen(p.id) }) }
     }
 }
 
@@ -294,10 +221,10 @@ private fun FamilyRow(title: String, people: List<Pair<Person, String>>, onOpen:
 private fun ExpandableText(text: String) {
     var expanded by remember { mutableStateOf(false) }
     val long = text.length > 280
-    Column(Modifier.padding(horizontal = 16.dp, vertical = 4.dp)) {
+    Column(Modifier.padding(14.dp)) {
         Text(
             text,
-            style = MaterialTheme.typography.bodyMedium,
+            style = MaterialTheme.typography.bodyLarge,
             maxLines = if (expanded || !long) Int.MAX_VALUE else 5,
             overflow = TextOverflow.Ellipsis,
         )
@@ -306,7 +233,7 @@ private fun ExpandableText(text: String) {
                 if (expanded) "Méně" else "Zobrazit celé",
                 style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.clickable { expanded = !expanded }.padding(vertical = 6.dp),
+                modifier = Modifier.clickable { expanded = !expanded }.padding(top = 8.dp),
             )
         }
     }

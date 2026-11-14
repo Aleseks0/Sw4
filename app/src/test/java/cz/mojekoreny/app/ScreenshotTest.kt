@@ -1,20 +1,27 @@
 package cz.mojekoreny.app
 
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.ui.test.junit4.createComposeRule
-import androidx.compose.ui.test.onRoot
-import androidx.compose.ui.test.onNodeWithText
-import androidx.compose.ui.test.performClick
-import androidx.compose.ui.viewinterop.AndroidView
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.AndroidView
 import com.github.takahirom.roborazzi.captureRoboImage
+import cz.mojekoreny.app.ui.Tab
+import cz.mojekoreny.app.ui.BottomTabs
+import cz.mojekoreny.app.ui.components.AppHeader
 import cz.mojekoreny.app.ui.screens.HomeScreen
 import cz.mojekoreny.app.ui.screens.MoreScreen
 import cz.mojekoreny.app.ui.screens.PeopleScreen
@@ -43,68 +50,63 @@ class ScreenshotTest {
     private val tree = GedcomReader.read(javaClass.getResourceAsStream("/ukazkovy-rod.ged")!!)
     private val home = tree.person("I1")!!
     private val today = LocalDate.of(2026, 11, 14)
+    private val recent = listOf("I2", "I3", "I5").mapNotNull(tree::person)
 
-    private fun shot(name: String, dark: Boolean = false, content: @Composable () -> Unit) {
+    /** Obrazovka v rámu skutečné aplikace: hnědá lišta nahoře, záložky dole. */
+    private fun frame(
+        name: String,
+        tab: Tab? = Tab.HOME,
+        dark: Boolean = false,
+        fontScale: Float = 1f,
+        back: Boolean = false,
+        before: () -> Unit = {},
+        content: @Composable () -> Unit,
+    ) {
         compose.setContent {
-            MojeKorenyTheme(dark = dark) {
-                Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) { content() }
+            val d = LocalDensity.current
+            CompositionLocalProvider(LocalDensity provides Density(d.density, fontScale)) {
+                MojeKorenyTheme(dark = dark) {
+                    Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+                        AppHeader("Rodokmen Dvořák", onBack = if (back) ({}) else null)
+                        Box(Modifier.weight(1f)) { content() }
+                        if (tab != null) BottomTabs(tab) {}
+                    }
+                }
             }
         }
+        before()
+        compose.waitForIdle()
         compose.onRoot().captureRoboImage("build/snimky/$name.png")
     }
 
-    @Test fun domu() = shot("1-domu") {
-        HomeScreen(tree, "Rodokmen Dvořák", home, listOf("I2", "I3", "I5").mapNotNull(tree::person), today, {}, {}, {})
+    @Test fun domu() = frame("1-domu") { HomeScreen(tree, "Rodokmen Dvořák", home, recent, today, {}, {}, {}) }
+    @Test fun domuTmavy() = frame("1-domu-tmavy", dark = true) { HomeScreen(tree, "Rodokmen Dvořák", home, recent, today, {}, {}, {}) }
+    @Test fun osoby() = frame("2-osoby", Tab.PEOPLE) { PeopleScreen(tree, home, false) {} }
+    @Test fun detail() = frame("3-detail", null, back = true) { PersonScreen(tree, tree.person("I2")!!, false, {}, {}, {}) }
+    @Test fun detailTmavy() = frame("3-detail-tmavy", null, dark = true, back = true) { PersonScreen(tree, tree.person("I3")!!, false, {}, {}, {}) }
+    @Test fun strom() = frame("4-strom", Tab.TREE) { TreeScreen(tree, home, {}, {}) }
+    @Test fun potomci() = frame(
+        "4-potomci", Tab.TREE,
+        before = { compose.onNodeWithText("Potomci").performClick() },
+    ) { TreeScreen(tree, tree.person("I20") ?: home, {}, {}) }
+    @Test fun vejir() = frame("4-vejir", Tab.TREE, before = { compose.onNodeWithText("Vějíř").performClick() }) {
+        TreeScreen(tree, home, {}, {})
     }
-
-    @Test fun domuTmavy() = shot("1-domu-tmavy", dark = true) {
-        HomeScreen(tree, "Rodokmen Dvořák", home, listOf("I2", "I3", "I5").mapNotNull(tree::person), today, {}, {}, {})
+    @Test fun vejirTmavy() = frame("4-vejir-tmavy", Tab.TREE, dark = true, before = { compose.onNodeWithText("Vějíř").performClick() }) {
+        TreeScreen(tree, home, {}, {})
     }
+    @Test fun vice() = frame("5-vice", Tab.MORE) { MoreScreen(tree, "ukazkovy-rod.ged", "0.4.0", {}, {}, {}) }
 
-    @Test fun osoby() = shot("2-osoby") { PeopleScreen(tree, home, false) {} }
-
-    @Test fun detail() = shot("3-detail") {
-        PersonScreen(tree, tree.person("I2")!!, isHome = false, {}, {}, {}, {})
-    }
-
-    @Test fun strom() = shot("4-strom") { TreeScreen(tree, home, {}, {}) }
-
-    @Test fun detailTmavy() = shot("3-detail-tmavy", dark = true) {
-        PersonScreen(tree, tree.person("I3")!!, isHome = false, {}, {}, {}, {})
-    }
-
-    @Test fun vejir() {
-        compose.setContent {
-            MojeKorenyTheme {
-                Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) { TreeScreen(tree, home, {}, {}) }
-            }
-        }
-        compose.onNodeWithText("Vějíř").performClick()
-        compose.waitForIdle()
-        compose.onRoot().captureRoboImage("build/snimky/4-vejir.png")
-    }
-
-    @Test fun vejirTmavy() {
-        compose.setContent {
-            MojeKorenyTheme(dark = true) {
-                Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) { TreeScreen(tree, home, {}, {}) }
-            }
-        }
-        compose.onNodeWithText("Vějíř").performClick()
-        compose.waitForIdle()
-        compose.onRoot().captureRoboImage("build/snimky/4-vejir-tmavy.png")
-    }
+    // Zátěž: velké písmo systému (130 %) – nic se nesmí překrývat ani ořezávat.
+    @Test fun domuVelkePismo() = frame("9-domu-pismo130", fontScale = 1.3f) { HomeScreen(tree, "Rodokmen Dvořák", home, recent, today, {}, {}, {}) }
+    @Test fun detailVelkePismo() = frame("9-detail-pismo130", null, fontScale = 1.3f, back = true) { PersonScreen(tree, tree.person("I2")!!, false, {}, {}, {}) }
 
     @Test fun ikona() {
         compose.setContent {
-            androidx.compose.foundation.layout.Box(Modifier.size(192.dp).background(Color.White)) {
-                AndroidView(factory = { ctx ->
-                    android.widget.ImageView(ctx).apply { setImageResource(R.mipmap.ic_launcher) }
-                }, modifier = Modifier.fillMaxSize())
+            Box(Modifier.size(192.dp).background(Color.White)) {
+                AndroidView(factory = { ctx -> android.widget.ImageView(ctx).apply { setImageResource(R.mipmap.ic_launcher) } }, modifier = Modifier.fillMaxSize())
             }
         }
         compose.onRoot().captureRoboImage("build/snimky/0-ikona.png")
     }
-
-    @Test fun vice() = shot("5-vice") { MoreScreen(tree, "ukazkovy-rod.ged", "0.2.0", {}, {}, {}) }
 }

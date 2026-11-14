@@ -16,18 +16,20 @@ Návrh a plán: [docs/NAVRH.md](docs/NAVRH.md)
   a prameny, export do GEDCOM 5.5.1 / 7.0. Rodokmen zůstává v telefonu
   i po restartu.
 
-## Verze 0.3 – barevný vzhled a vějířový graf
+## Verze 0.4 – vzhled podle rodinného webu
 
-Moderní barevný vzhled, kompaktnější obrazovky, nová ikona. Strom ve třech
-pohledech: předci, potomci a vějířový graf (5 generací); přiblížení prsty
-nebo tlačítky +/−, strom už nepřekrývá ovládací prvky.
+Aplikace přebírá vzhled webu: hnědá lišta s oranžovým proužkem, papírové
+pozadí, bílé karty s tenkým rámečkem a patkové nadpisy. Strom ve třech pohledech
+(předci, potomci a vějíř v celém kruhu); ovládání **+ − Celý** je nad plochou
+stromu, takže se s ní nepřekrývá. Barvy linií rodu odpovídají vějíři na webu.
 
 | Domů | Detail | Strom | Vějíř |
 |---|---|---|---|
 | ![](docs/snimky/1-domu.png) | ![](docs/snimky/3-detail.png) | ![](docs/snimky/4-strom.png) | ![](docs/snimky/4-vejir.png) |
 
 Snímky jsou ze smyšleného rodokmenu. Vytvoří se bez emulátoru:
-`./gradlew :app:testDebugUnitTest` → `app/build/snimky/`.
+`./gradlew :app:testDebugUnitTest` → `app/build/snimky/` (včetně zkoušky
+s velkým písmem systému 130 %).
 
 ## Stažení APK
 

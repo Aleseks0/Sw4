@@ -3,13 +3,8 @@ package cz.mojekoreny.app.ui
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
-import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -26,10 +21,12 @@ import androidx.compose.material.icons.outlined.MoreHoriz
 import androidx.compose.material.icons.outlined.Park
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -51,6 +48,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cz.mojekoreny.app.BuildConfigInfo
 import cz.mojekoreny.app.TreeViewModel
+import cz.mojekoreny.app.ui.components.AppHeader
 import cz.mojekoreny.app.ui.components.EmptyState
 import cz.mojekoreny.app.ui.screens.HomeScreen
 import cz.mojekoreny.app.ui.screens.MoreScreen
@@ -101,26 +99,22 @@ fun MojeKorenyApp(vm: TreeViewModel) {
     val tree = state.tree
     val openPerson: (String) -> Unit = { id -> stack.add(id); vm.visited(id) }
     val openTree: (String) -> Unit = { id -> treeRoot = id; stack.clear(); tab = Tab.TREE }
+    val title = homeTitle(state.fileName, state.homeId?.let { tree?.person(it) }?.name?.surname)
 
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
         snackbarHost = { SnackbarHost(snackbar) },
         contentWindowInsets = WindowInsets(0),
+        topBar = {
+            AppHeader(title, onBack = if (stack.isNotEmpty()) ({ stack.removeAt(stack.lastIndex) }) else null)
+        },
         bottomBar = {
-            if (stack.isEmpty()) {
-                NavigationBar(containerColor = MaterialTheme.colorScheme.surfaceContainer) {
-                    Tab.entries.forEach { t ->
-                        NavigationBarItem(
-                            selected = tab == t,
-                            onClick = { focusSearch = false; tab = t },
-                            icon = { Icon(if (tab == t) t.selectedIcon else t.icon, null) },
-                            label = { Text(t.label) },
-                        )
-                    }
-                }
-            }
+            if (stack.isEmpty()) BottomTabs(tab) { focusSearch = false; tab = it }
         },
     ) { padding ->
         Box(Modifier.fillMaxSize().padding(padding)) {
+            val personId = stack.lastOrNull()
+            val person = personId?.let { tree?.person(it) }
             when {
                 state.loading -> CircularProgressIndicator(Modifier.align(Alignment.Center))
                 tree == null && tab != Tab.MORE -> EmptyState(
@@ -128,70 +122,76 @@ fun MojeKorenyApp(vm: TreeViewModel) {
                     "Vítejte v aplikaci Moje kořeny",
                     "Načtěte rodokmen ze souboru GEDCOM (.ged). Data zůstanou v telefonu a fungují i bez internetu.",
                 ) {
-                    Button(onClick = { importer.launch(GEDCOM_TYPES) }) {
+                    Button(onClick = { importer.launch(GEDCOM_TYPES) }, shape = MaterialTheme.shapes.medium) {
                         Icon(Icons.Outlined.FileUpload, null)
                         Text("  Načíst rodokmen")
                     }
                 }
-                else -> AnimatedContent(
-                    targetState = stack.lastOrNull(),
-                    transitionSpec = {
-                        if (targetState != null && (initialState == null || stack.size > 0)) {
-                            (slideInHorizontally { it / 3 } + fadeIn()) togetherWith (fadeOut())
-                        } else {
-                            fadeIn() togetherWith (slideOutHorizontally { it / 3 } + fadeOut())
-                        }
-                    },
-                    label = "detail",
-                ) { personId ->
-                    val person = personId?.let { tree?.person(it) }
-                    if (tree != null && person != null) {
-                        PersonScreen(
-                            tree, person,
-                            isHome = person.id == state.homeId,
-                            onBack = { if (stack.isNotEmpty()) stack.removeAt(stack.lastIndex) },
-                            onOpenPerson = openPerson,
-                            onOpenTree = openTree,
-                            onSetHome = vm::setHome,
-                        )
-                    } else {
-                        AnimatedContent(targetState = tab, transitionSpec = { fadeIn() togetherWith fadeOut() }, label = "tab") { t ->
-                            when (t) {
-                                Tab.HOME -> HomeScreen(
-                                    tree = tree!!,
-                                    title = homeTitle(state.fileName, state.homeId?.let(tree::person)?.name?.surname),
-                                    home = state.homeId?.let(tree::person),
-                                    recent = state.recent.mapNotNull(tree::person),
-                                    today = LocalDate.now(),
-                                    onSearch = { focusSearch = true; tab = Tab.PEOPLE },
-                                    onOpenPerson = openPerson,
-                                    onOpenTree = openTree,
-                                )
-                                Tab.PEOPLE -> PeopleScreen(tree!!, state.homeId?.let(tree::person), focusSearch, openPerson)
-                                Tab.TREE -> TreeScreen(
-                                    tree!!,
-                                    root = (treeRoot ?: state.homeId)?.let(tree::person) ?: tree.persons.firstOrNull(),
-                                    onFocus = { treeRoot = it },
-                                    onOpenPerson = openPerson,
-                                )
-                                Tab.MORE -> MoreScreen(
-                                    tree, state.fileName, BuildConfigInfo.VERSION,
-                                    onImport = { importer.launch(GEDCOM_TYPES) },
-                                    onExport551 = { exportVersion = GedcomVersion.V551; exporter.launch("rodokmen.ged") },
-                                    onExport70 = { exportVersion = GedcomVersion.V70; exporter.launch("rodokmen-7.ged") },
-                                )
-                            }
-                        }
-                    }
+                tree != null && person != null -> PersonScreen(
+                    tree, person,
+                    isHome = person.id == state.homeId,
+                    onOpenPerson = openPerson,
+                    onOpenTree = openTree,
+                    onSetHome = vm::setHome,
+                )
+                else -> when (tab) {
+                    Tab.HOME -> HomeScreen(
+                        tree = tree!!,
+                        title = title,
+                        home = state.homeId?.let(tree::person),
+                        recent = state.recent.mapNotNull(tree::person),
+                        today = LocalDate.now(),
+                        onSearch = { focusSearch = true; tab = Tab.PEOPLE },
+                        onOpenPerson = openPerson,
+                        onOpenTree = openTree,
+                    )
+                    Tab.PEOPLE -> PeopleScreen(tree!!, state.homeId?.let(tree::person), focusSearch, openPerson)
+                    Tab.TREE -> TreeScreen(
+                        tree!!,
+                        root = (treeRoot ?: state.homeId)?.let(tree::person) ?: tree.persons.firstOrNull(),
+                        onFocus = { treeRoot = it },
+                        onOpenPerson = openPerson,
+                    )
+                    Tab.MORE -> MoreScreen(
+                        tree, state.fileName, BuildConfigInfo.VERSION,
+                        onImport = { importer.launch(GEDCOM_TYPES) },
+                        onExport551 = { exportVersion = GedcomVersion.V551; exporter.launch("rodokmen.ged") },
+                        onExport70 = { exportVersion = GedcomVersion.V70; exporter.launch("rodokmen-7.ged") },
+                    )
                 }
             }
         }
     }
 }
 
-/** „Rod Novákových“ by chtělo skloňování; stačí „Rodokmen – Novák“. */
 private fun homeTitle(fileName: String?, surname: String?): String = when {
     !surname.isNullOrBlank() -> "Rodokmen $surname"
     !fileName.isNullOrBlank() -> fileName.substringBeforeLast('.')
-    else -> "Rodokmen"
+    else -> "Moje kořeny"
+}
+
+/** Spodní lišta se záložkami ve stylu webu: bílý podklad, tenká linka, hnědý akcent. */
+@Composable
+fun BottomTabs(selected: Tab, onSelect: (Tab) -> Unit) {
+    val cs = MaterialTheme.colorScheme
+    Column {
+        HorizontalDivider(color = cs.outlineVariant)
+        NavigationBar(containerColor = cs.surfaceContainerLowest, tonalElevation = androidx.compose.ui.unit.Dp.Hairline) {
+            Tab.entries.forEach { t ->
+                NavigationBarItem(
+                    selected = selected == t,
+                    onClick = { onSelect(t) },
+                    icon = { Icon(if (selected == t) t.selectedIcon else t.icon, null) },
+                    label = { Text(t.label) },
+                    colors = NavigationBarItemDefaults.colors(
+                        selectedIconColor = cs.primary,
+                        selectedTextColor = cs.primary,
+                        indicatorColor = cs.primaryContainer,
+                        unselectedIconColor = cs.onSurfaceVariant,
+                        unselectedTextColor = cs.onSurfaceVariant,
+                    ),
+                )
+            }
+        }
+    }
 }

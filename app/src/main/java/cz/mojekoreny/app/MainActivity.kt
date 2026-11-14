@@ -4,6 +4,7 @@ import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.SystemBarStyle
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import cz.mojekoreny.app.ui.MojeKorenyApp
@@ -14,7 +15,8 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+        // Stavový řádek v barvě hnědé lišty (světlé ikony), navigační lišta podle motivu.
+        enableEdgeToEdge(statusBarStyle = SystemBarStyle.dark(0xFF3B2E22.toInt()))
         if (savedInstanceState == null) handleIntent(intent)
         setContent {
             MojeKorenyTheme {
