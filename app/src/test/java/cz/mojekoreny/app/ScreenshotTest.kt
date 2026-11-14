@@ -7,6 +7,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.viewinterop.AndroidView
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.background
 import com.github.takahirom.roborazzi.captureRoboImage
 import cz.mojekoreny.app.ui.screens.HomeScreen
 import cz.mojekoreny.app.ui.screens.MoreScreen
@@ -64,6 +71,39 @@ class ScreenshotTest {
 
     @Test fun detailTmavy() = shot("3-detail-tmavy", dark = true) {
         PersonScreen(tree, tree.person("I3")!!, isHome = false, {}, {}, {}, {})
+    }
+
+    @Test fun vejir() {
+        compose.setContent {
+            MojeKorenyTheme {
+                Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) { TreeScreen(tree, home, {}, {}) }
+            }
+        }
+        compose.onNodeWithText("Vějíř").performClick()
+        compose.waitForIdle()
+        compose.onRoot().captureRoboImage("build/snimky/4-vejir.png")
+    }
+
+    @Test fun vejirTmavy() {
+        compose.setContent {
+            MojeKorenyTheme(dark = true) {
+                Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) { TreeScreen(tree, home, {}, {}) }
+            }
+        }
+        compose.onNodeWithText("Vějíř").performClick()
+        compose.waitForIdle()
+        compose.onRoot().captureRoboImage("build/snimky/4-vejir-tmavy.png")
+    }
+
+    @Test fun ikona() {
+        compose.setContent {
+            androidx.compose.foundation.layout.Box(Modifier.size(192.dp).background(Color.White)) {
+                AndroidView(factory = { ctx ->
+                    android.widget.ImageView(ctx).apply { setImageResource(R.mipmap.ic_launcher) }
+                }, modifier = Modifier.fillMaxSize())
+            }
+        }
+        compose.onRoot().captureRoboImage("build/snimky/0-ikona.png")
     }
 
     @Test fun vice() = shot("5-vice") { MoreScreen(tree, "ukazkovy-rod.ged", "0.2.0", {}, {}, {}) }

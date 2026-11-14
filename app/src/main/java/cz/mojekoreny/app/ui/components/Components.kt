@@ -43,7 +43,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -81,15 +80,14 @@ fun PersonAvatar(person: Person, size: Dp = 44.dp, ring: Boolean = false) {
             .size(size)
             .then(if (ring) Modifier.border(3.dp, MaterialTheme.colorScheme.surface, CircleShape) else Modifier)
             .clip(CircleShape)
-            .background(Brush.linearGradient(listOf(strong.copy(alpha = 0.85f), strong))),
+            .background(Brush.linearGradient(listOf(strong.copy(alpha = 0.75f), strong))),
         contentAlignment = Alignment.Center,
     ) {
         Text(
             initials(person),
             color = onStrong,
-            fontFamily = FontFamily.Serif,
-            fontWeight = FontWeight.SemiBold,
-            fontSize = (size.value * 0.38f).sp,
+            fontWeight = FontWeight.Bold,
+            fontSize = (size.value * 0.36f).sp,
         )
     }
 }
@@ -106,19 +104,22 @@ fun SectionCard(
     Card(
         modifier = modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         shape = MaterialTheme.shapes.large,
     ) {
-        Column(Modifier.padding(vertical = 16.dp)) {
-            Row(Modifier.padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
+        Column(Modifier.padding(vertical = 12.dp)) {
+            Row(Modifier.padding(horizontal = 14.dp), verticalAlignment = Alignment.CenterVertically) {
                 if (icon != null) {
-                    Icon(icon, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
-                    Spacer(Modifier.width(8.dp))
+                    Box(
+                        Modifier.size(28.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primaryContainer),
+                        contentAlignment = Alignment.Center,
+                    ) { Icon(icon, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp)) }
+                    Spacer(Modifier.width(10.dp))
                 }
                 Text(title, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
                 action?.invoke()
             }
-            Spacer(Modifier.size(8.dp))
+            Spacer(Modifier.size(6.dp))
             content()
         }
     }
@@ -131,12 +132,12 @@ fun PersonTile(person: Person, label: String?, onClick: () -> Unit, modifier: Mo
     Surface(
         onClick = onClick,
         shape = MaterialTheme.shapes.medium,
-        color = container.copy(alpha = 0.55f),
-        modifier = modifier.width(140.dp),
+        color = container.copy(alpha = 0.6f),
+        modifier = modifier.width(116.dp),
     ) {
-        Column(Modifier.padding(12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            PersonAvatar(person, 48.dp)
-            Spacer(Modifier.size(8.dp))
+        Column(Modifier.padding(horizontal = 8.dp, vertical = 10.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            PersonAvatar(person, 38.dp)
+            Spacer(Modifier.size(6.dp))
             if (label != null) {
                 Text(
                     label.uppercase(),
@@ -147,7 +148,7 @@ fun PersonTile(person: Person, label: String?, onClick: () -> Unit, modifier: Mo
             }
             Text(
                 person.name.full.ifEmpty { "(beze jména)" },
-                style = MaterialTheme.typography.bodyMedium,
+                style = MaterialTheme.typography.bodySmall,
                 fontWeight = FontWeight.SemiBold,
                 textAlign = TextAlign.Center,
                 maxLines = 2,
@@ -167,11 +168,11 @@ fun PersonRow(person: Person, supporting: String?, onClick: () -> Unit, trailing
         Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 10.dp),
+            .padding(horizontal = 16.dp, vertical = 7.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        PersonAvatar(person, 44.dp)
-        Spacer(Modifier.width(14.dp))
+        PersonAvatar(person, 38.dp)
+        Spacer(Modifier.width(12.dp))
         Column(Modifier.weight(1f)) {
             Text(
                 person.name.full.ifEmpty { "(beze jména)" },
@@ -194,15 +195,20 @@ fun PersonRow(person: Person, supporting: String?, onClick: () -> Unit, trailing
     }
 }
 
-/** Dlaždice s číslem (přehled na úvodní obrazovce). */
+/** Barevná dlaždice s číslem (přehled na úvodní obrazovce). */
 @Composable
-fun StatTile(value: String, label: String, icon: ImageVector, modifier: Modifier = Modifier) {
-    Surface(shape = MaterialTheme.shapes.medium, color = MaterialTheme.colorScheme.surfaceContainerLowest, modifier = modifier) {
-        Column(Modifier.padding(horizontal = 12.dp, vertical = 14.dp)) {
-            Icon(icon, null, tint = MaterialTheme.colorScheme.secondary, modifier = Modifier.size(20.dp))
-            Spacer(Modifier.size(6.dp))
-            Text(value, style = MaterialTheme.typography.headlineSmall, maxLines = 1)
-            Text(label, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
+fun StatTile(value: String, label: String, icon: ImageVector, accent: Int, modifier: Modifier = Modifier) {
+    val (strong, container) = LocalFamilyColors.current.accents[accent % LocalFamilyColors.current.accents.size]
+    Surface(shape = MaterialTheme.shapes.large, color = container, modifier = modifier) {
+        Row(Modifier.padding(horizontal = 12.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+            Box(Modifier.size(34.dp).clip(CircleShape).background(strong), contentAlignment = Alignment.Center) {
+                Icon(icon, null, tint = Color.White, modifier = Modifier.size(18.dp))
+            }
+            Spacer(Modifier.width(10.dp))
+            Column {
+                Text(value, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = strong, maxLines = 1)
+                Text(label, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
+            }
         }
     }
 }
@@ -216,10 +222,10 @@ fun EmptyState(icon: ImageVector, title: String, text: String, action: (@Composa
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Box(
-            Modifier.size(96.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primaryContainer),
+            Modifier.size(80.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primaryContainer),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(icon, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(48.dp))
+            Icon(icon, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(40.dp))
         }
         Spacer(Modifier.size(20.dp))
         Text(title, style = MaterialTheme.typography.headlineSmall, textAlign = TextAlign.Center)

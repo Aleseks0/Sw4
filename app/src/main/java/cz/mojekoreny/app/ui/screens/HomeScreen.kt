@@ -48,7 +48,10 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import cz.mojekoreny.app.ui.components.PersonAvatar
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import cz.mojekoreny.app.ui.components.initials
+import cz.mojekoreny.app.ui.theme.LocalFamilyColors
 import cz.mojekoreny.app.ui.components.PersonTile
 import cz.mojekoreny.app.ui.components.SectionCard
 import cz.mojekoreny.app.ui.components.StatTile
@@ -82,51 +85,29 @@ fun HomeScreen(
         tree.persons.filter { it.birth?.parsedDate?.year != null }.sortedBy { it.birth!!.parsedDate!!.sortKey }.take(6)
     }
 
-    LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 24.dp)) {
-        item { Hero(title, tree.persons.size, earliest, onSearch) }
+    LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 20.dp)) {
+        item { TopArea(title, onSearch) }
 
         item {
-            Row(
-                Modifier.padding(horizontal = 16.dp).padding(top = 16.dp),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
-                StatTile("${tree.persons.size}", "osob", Icons.Outlined.Groups, Modifier.weight(1f))
-                StatTile("${tree.families.size}", "rodin", Icons.Outlined.FamilyRestroom, Modifier.weight(1f))
-                StatTile(if (generations > 0) "$generations" else "–", "generací", Icons.Outlined.AccountTree, Modifier.weight(1f))
-            }
-        }
-
-        if (home != null) {
-            item {
-                SectionCard("Výchozí osoba", modifier = Modifier.padding(horizontal = 16.dp).padding(top = 16.dp)) {
-                    Row(Modifier.padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
-                        PersonAvatar(home, 64.dp)
-                        Spacer(Modifier.width(16.dp))
-                        Column(Modifier.weight(1f)) {
-                            Text(home.name.full, style = MaterialTheme.typography.titleLarge)
-                            if (home.lifeSpan.isNotEmpty()) {
-                                Text(home.lifeSpan, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            }
-                        }
-                    }
-                    Row(
-                        Modifier.padding(horizontal = 16.dp).padding(top = 14.dp),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
-                    ) {
-                        FilledTonalButton(onClick = { onOpenTree(home.id) }, Modifier.weight(1f)) {
-                            Icon(Icons.Outlined.AccountTree, null, Modifier.size(18.dp))
-                            Spacer(Modifier.width(8.dp))
-                            Text("Strom")
-                        }
-                        OutlinedButton(onClick = { onOpenPerson(home.id) }, Modifier.weight(1f)) { Text("Životní příběh") }
-                    }
+            Column(Modifier.padding(horizontal = 16.dp).padding(top = 14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    StatTile("${tree.persons.size}", "osob", Icons.Outlined.Groups, 0, Modifier.weight(1f))
+                    StatTile("${tree.families.size}", "rodin", Icons.Outlined.FamilyRestroom, 1, Modifier.weight(1f))
+                }
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    StatTile(if (generations > 0) "$generations" else "–", "generací", Icons.Outlined.AccountTree, 2, Modifier.weight(1f))
+                    StatTile(earliest?.toString() ?: "–", "nejstarší záznam", Icons.Outlined.HourglassBottom, 3, Modifier.weight(1f))
                 }
             }
         }
 
+        if (home != null) {
+            item { HomePersonCard(home, onOpenPerson, onOpenTree) }
+        }
+
         if (anniversaries.isNotEmpty()) {
             item {
-                SectionCard("Výročí v rodu", Icons.Outlined.Celebration, Modifier.padding(horizontal = 16.dp).padding(top = 16.dp)) {
+                SectionCard("Výročí v rodu", Icons.Outlined.Celebration, Modifier.padding(horizontal = 16.dp).padding(top = 14.dp)) {
                     anniversaries.forEach { a ->
                         tree.person(a.personId)?.let { AnniversaryRow(a, it, tree, onOpenPerson) }
                     }
@@ -137,7 +118,7 @@ fun HomeScreen(
         if (recent.isNotEmpty()) {
             item { SectionTitle("Naposledy prohlížené", Icons.Outlined.History) }
             item {
-                LazyRow(contentPadding = PaddingValues(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                LazyRow(contentPadding = PaddingValues(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     items(recent, key = { it.id }) { p -> PersonTile(p, null, { onOpenPerson(p.id) }) }
                 }
             }
@@ -146,7 +127,7 @@ fun HomeScreen(
         if (oldest.isNotEmpty()) {
             item { SectionTitle("Nejstarší předci", Icons.Outlined.HourglassBottom) }
             item {
-                LazyRow(contentPadding = PaddingValues(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                LazyRow(contentPadding = PaddingValues(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     items(oldest, key = { it.id }) { p -> PersonTile(p, null, { onOpenPerson(p.id) }) }
                 }
             }
@@ -155,48 +136,82 @@ fun HomeScreen(
 }
 
 @Composable
-private fun Hero(title: String, persons: Int, earliest: Int?, onSearch: () -> Unit) {
+private fun TopArea(title: String, onSearch: () -> Unit) {
     val cs = MaterialTheme.colorScheme
+    Column(
+        Modifier
+            .windowInsetsPadding(WindowInsets.statusBars)
+            .padding(horizontal = 16.dp)
+            .padding(top = 14.dp),
+    ) {
+        Text("Dobrý den 👋", style = MaterialTheme.typography.bodyMedium, color = cs.onSurfaceVariant)
+        Text(title, style = MaterialTheme.typography.headlineMedium)
+        Spacer(Modifier.height(12.dp))
+        Surface(
+            onClick = onSearch,
+            shape = RoundedCornerShape(24.dp),
+            color = cs.surfaceContainerLowest,
+            border = androidx.compose.foundation.BorderStroke(1.dp, cs.outlineVariant),
+            modifier = Modifier.fillMaxWidth().height(46.dp),
+        ) {
+            Row(Modifier.padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Outlined.Search, null, tint = cs.primary, modifier = Modifier.size(20.dp))
+                Spacer(Modifier.width(10.dp))
+                Text("Hledat předka, místo, rok…", color = cs.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
+            }
+        }
+    }
+}
+
+@Composable
+private fun HomePersonCard(home: Person, onOpenPerson: (String) -> Unit, onOpenTree: (String) -> Unit) {
+    val accents = LocalFamilyColors.current.accents
     Box(
         Modifier
+            .padding(horizontal = 16.dp)
+            .padding(top = 14.dp)
             .fillMaxWidth()
-            .clip(RoundedCornerShape(bottomStart = 32.dp, bottomEnd = 32.dp))
-            .background(Brush.linearGradient(listOf(Color(0xFF244A37), Color(0xFF2F5D45), Color(0xFF6B4E2E)))),
+            .clip(MaterialTheme.shapes.large)
+            .background(Brush.linearGradient(listOf(Color(0xFF7A4FE6), Color(0xFF2F6FE4))))
+            .clickable { onOpenPerson(home.id) },
     ) {
-        // Jemné „letokruhy“ v pozadí
         Box(
-            Modifier.padding(start = 220.dp, top = 8.dp).size(220.dp).clip(CircleShape)
-                .background(Color.White.copy(alpha = 0.06f)),
+            Modifier.padding(start = 230.dp).size(160.dp).clip(CircleShape).background(Color.White.copy(alpha = 0.08f)),
         )
-        Column(
-            Modifier
-                .windowInsetsPadding(WindowInsets.statusBars)
-                .padding(horizontal = 20.dp)
-                .padding(top = 20.dp, bottom = 24.dp),
-        ) {
-            Text("MOJE KOŘENY", style = MaterialTheme.typography.labelSmall, color = Color.White.copy(alpha = 0.75f))
-            Spacer(Modifier.height(6.dp))
-            Text(title, style = MaterialTheme.typography.headlineMedium, color = Color.White)
-            Text(
-                buildString {
-                    append("$persons osob")
-                    if (earliest != null) append(" · od roku $earliest")
-                },
-                style = MaterialTheme.typography.bodyMedium,
-                color = Color.White.copy(alpha = 0.85f),
-            )
-            Spacer(Modifier.height(20.dp))
-            Surface(
-                onClick = onSearch,
-                shape = RoundedCornerShape(28.dp),
-                color = cs.surface,
-                modifier = Modifier.fillMaxWidth().height(52.dp),
-            ) {
-                Row(Modifier.padding(horizontal = 18.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Outlined.Search, null, tint = cs.onSurfaceVariant)
-                    Spacer(Modifier.width(12.dp))
-                    Text("Hledat předka, místo, rok…", color = cs.onSurfaceVariant)
+        Column(Modifier.padding(14.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    Modifier.size(46.dp).clip(CircleShape).background(Color.White.copy(alpha = 0.22f)),
+                    contentAlignment = Alignment.Center,
+                ) { Text(initials(home), color = Color.White, fontWeight = FontWeight.Bold) }
+                Spacer(Modifier.width(12.dp))
+                Column(Modifier.weight(1f)) {
+                    Text("Výchozí osoba", style = MaterialTheme.typography.labelMedium, color = Color.White.copy(alpha = 0.8f))
+                    Text(home.name.full, style = MaterialTheme.typography.titleLarge, color = Color.White, maxLines = 1)
+                    if (home.lifeSpan.isNotEmpty()) {
+                        Text(home.lifeSpan, style = MaterialTheme.typography.bodySmall, color = Color.White.copy(alpha = 0.85f))
+                    }
                 }
+            }
+            Spacer(Modifier.height(12.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Button(
+                    onClick = { onOpenTree(home.id) },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = accents[0].first),
+                    contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp),
+                    modifier = Modifier.height(36.dp),
+                ) {
+                    Icon(Icons.Outlined.AccountTree, null, Modifier.size(16.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text("Strom", style = MaterialTheme.typography.labelLarge)
+                }
+                OutlinedButton(
+                    onClick = { onOpenPerson(home.id) },
+                    border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.6f)),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White),
+                    contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp),
+                    modifier = Modifier.height(36.dp),
+                ) { Text("Životní příběh", style = MaterialTheme.typography.labelLarge) }
             }
         }
     }
@@ -205,10 +220,10 @@ private fun Hero(title: String, persons: Int, earliest: Int?, onSearch: () -> Un
 @Composable
 private fun SectionTitle(text: String, icon: androidx.compose.ui.graphics.vector.ImageVector) {
     Row(
-        Modifier.padding(horizontal = 20.dp).padding(top = 22.dp, bottom = 10.dp),
+        Modifier.padding(horizontal = 18.dp).padding(top = 18.dp, bottom = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Icon(icon, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+        Icon(icon, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
         Spacer(Modifier.width(8.dp))
         Text(text, style = MaterialTheme.typography.titleMedium)
     }
@@ -237,15 +252,15 @@ private fun AnniversaryRow(a: Anniversary, p: Person, tree: GedcomTree, onOpen: 
         else -> "za ${a.inDays} dní"
     }
     Row(
-        Modifier.fillMaxWidth().clickable { onOpen(p.id) }.padding(horizontal = 16.dp, vertical = 8.dp),
+        Modifier.fillMaxWidth().clickable { onOpen(p.id) }.padding(horizontal = 14.dp, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(Modifier.size(40.dp).clip(CircleShape).background(container), contentAlignment = Alignment.Center) {
-            Icon(icon, null, tint = strong, modifier = Modifier.size(20.dp))
+        Box(Modifier.size(34.dp).clip(CircleShape).background(container), contentAlignment = Alignment.Center) {
+            Icon(icon, null, tint = strong, modifier = Modifier.size(18.dp))
         }
-        Spacer(Modifier.width(14.dp))
+        Spacer(Modifier.width(12.dp))
         Column(Modifier.weight(1f)) {
-            Text(name, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold, maxLines = 1)
+            Text(name, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold, maxLines = 1)
             Text(
                 "$what v roce ${a.year} · ${yearsCz(a.years)}",
                 style = MaterialTheme.typography.bodySmall,
@@ -254,7 +269,7 @@ private fun AnniversaryRow(a: Anniversary, p: Person, tree: GedcomTree, onOpen: 
         }
         Surface(
             shape = RoundedCornerShape(12.dp),
-            color = if (a.inDays == 0) MaterialTheme.colorScheme.tertiaryContainer else MaterialTheme.colorScheme.surfaceContainerHigh,
+            color = if (a.inDays == 0) LocalFamilyColors.current.accents[5].second else MaterialTheme.colorScheme.surfaceContainerHigh,
         ) {
             Text(
                 whenText,

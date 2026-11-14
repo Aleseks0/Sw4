@@ -94,7 +94,7 @@ fun PersonScreen(
 
         if (story.isNotEmpty()) {
             item {
-                SectionCard("Životní příběh", Icons.Outlined.Timeline, Modifier.padding(horizontal = 16.dp).padding(top = 16.dp)) {
+                SectionCard("Životní příběh", Icons.Outlined.Timeline, Modifier.padding(horizontal = 16.dp).padding(top = 12.dp)) {
                     story.forEachIndexed { i, item ->
                         TimelineRow(item, first = i == 0, last = i == story.lastIndex) {
                             item.relatedPersonId?.let(onOpenPerson)
@@ -105,7 +105,7 @@ fun PersonScreen(
         }
 
         item {
-            SectionCard("Rodina", Icons.Outlined.FamilyRestroom, Modifier.padding(horizontal = 16.dp).padding(top = 16.dp)) {
+            SectionCard("Rodina", Icons.Outlined.FamilyRestroom, Modifier.padding(horizontal = 16.dp).padding(top = 12.dp)) {
                 var any = false
                 if (parents.isNotEmpty()) {
                     any = true
@@ -143,7 +143,7 @@ fun PersonScreen(
 
         if (notes.isNotEmpty()) {
             item {
-                SectionCard("Poznámky", Icons.AutoMirrored.Outlined.Notes, Modifier.padding(horizontal = 16.dp).padding(top = 16.dp)) {
+                SectionCard("Poznámky", Icons.AutoMirrored.Outlined.Notes, Modifier.padding(horizontal = 16.dp).padding(top = 12.dp)) {
                     notes.forEach { ExpandableText(it) }
                 }
             }
@@ -151,7 +151,7 @@ fun PersonScreen(
 
         if (sources.isNotEmpty()) {
             item {
-                SectionCard("Prameny", Icons.AutoMirrored.Outlined.MenuBook, Modifier.padding(horizontal = 16.dp).padding(top = 16.dp)) {
+                SectionCard("Prameny", Icons.AutoMirrored.Outlined.MenuBook, Modifier.padding(horizontal = 16.dp).padding(top = 12.dp)) {
                     sources.forEach { s ->
                         Column(Modifier.padding(horizontal = 16.dp, vertical = 6.dp)) {
                             Text(s.title ?: s.abbreviation ?: s.id, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
@@ -181,7 +181,7 @@ private fun Header(person: Person, isHome: Boolean, onBack: () -> Unit, onTree: 
             .background(Brush.verticalGradient(listOf(container, cs.surface))),
     ) {
         Column(
-            Modifier.fillMaxWidth().windowInsetsPadding(WindowInsets.statusBars).padding(bottom = 20.dp),
+            Modifier.fillMaxWidth().windowInsetsPadding(WindowInsets.statusBars).padding(bottom = 14.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Row(Modifier.fillMaxWidth().padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -191,24 +191,24 @@ private fun Header(person: Person, isHome: Boolean, onBack: () -> Unit, onTree: 
                 ) { Icon(Icons.AutoMirrored.Outlined.ArrowBack, "Zpět") }
                 Spacer(Modifier.weight(1f))
             }
-            PersonAvatar(person, 104.dp, ring = true)
-            Spacer(Modifier.height(14.dp))
+            PersonAvatar(person, 76.dp, ring = true)
+            Spacer(Modifier.height(10.dp))
             Text(
                 person.name.full.ifEmpty { "(beze jména)" },
-                style = MaterialTheme.typography.headlineMedium,
+                style = MaterialTheme.typography.headlineSmall,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.padding(horizontal = 24.dp),
             )
             person.birthSurname?.let {
-                Text(if (person.sex == Sex.FEMALE) "rozená $it" else "rodné příjmení $it", style = MaterialTheme.typography.bodyLarge, color = cs.onSurfaceVariant)
+                Text(if (person.sex == Sex.FEMALE) "rozená $it" else "rodné příjmení $it", style = MaterialTheme.typography.bodyMedium, color = cs.onSurfaceVariant)
             }
-            Spacer(Modifier.height(10.dp))
+            Spacer(Modifier.height(8.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 if (person.lifeSpan.isNotEmpty()) Pill(person.lifeSpan, strong)
                 person.ageAtDeath()?.let { Pill("dožil${if (person.sex == Sex.FEMALE) "a" else ""} se ${yearsCz(it)}", cs.secondary) }
             }
-            Spacer(Modifier.height(16.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Spacer(Modifier.height(10.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 AssistChip(
                     onClick = onTree,
                     label = { Text("Strom") },
@@ -234,7 +234,7 @@ private fun Pill(text: String, color: Color) {
             text,
             color = color,
             style = MaterialTheme.typography.labelLarge,
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp),
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 3.dp),
         )
     }
 }
@@ -255,23 +255,23 @@ private fun TimelineRow(item: LifeItem, first: Boolean, last: Boolean, onClick: 
             .then(if (item.relatedPersonId != null) Modifier.clickable(onClick = onClick) else Modifier)
             .padding(horizontal = 16.dp),
     ) {
-        Column(Modifier.width(40.dp).fillMaxHeight(), horizontalAlignment = Alignment.CenterHorizontally) {
-            Box(Modifier.width(2.dp).height(10.dp).background(if (first) Color.Transparent else cs.outlineVariant))
+        Column(Modifier.width(32.dp).fillMaxHeight(), horizontalAlignment = Alignment.CenterHorizontally) {
+            Box(Modifier.width(2.dp).height(8.dp).background(if (first) Color.Transparent else cs.outlineVariant))
             Box(
-                Modifier.size(34.dp).clip(CircleShape).background(accent.copy(alpha = 0.14f)),
+                Modifier.size(28.dp).clip(CircleShape).background(accent.copy(alpha = 0.14f)),
                 contentAlignment = Alignment.Center,
-            ) { Icon(item.kind.icon(), null, tint = accent, modifier = Modifier.size(18.dp)) }
+            ) { Icon(item.kind.icon(), null, tint = accent, modifier = Modifier.size(15.dp)) }
             Box(Modifier.width(2.dp).weight(1f).background(if (last) Color.Transparent else cs.outlineVariant))
         }
         Spacer(Modifier.width(12.dp))
-        Column(Modifier.weight(1f).padding(top = 10.dp, bottom = 14.dp)) {
+        Column(Modifier.weight(1f).padding(top = 6.dp, bottom = 10.dp)) {
             item.date?.let {
-                Text(it.toCzech(), style = MaterialTheme.typography.labelLarge, color = accent)
+                Text(it.toCzech(), style = MaterialTheme.typography.labelMedium, color = accent)
             }
-            Text(item.title, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold)
+            Text(item.title, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
             val sub = listOfNotNull(item.place, item.detail).joinToString(" · ")
             if (sub.isNotEmpty()) {
-                Text(sub, style = MaterialTheme.typography.bodyMedium, color = cs.onSurfaceVariant)
+                Text(sub, style = MaterialTheme.typography.bodySmall, color = cs.onSurfaceVariant)
             }
         }
     }
@@ -283,9 +283,9 @@ private fun FamilyRow(title: String, people: List<Pair<Person, String>>, onOpen:
         title,
         style = MaterialTheme.typography.labelLarge,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = Modifier.padding(horizontal = 16.dp).padding(top = 8.dp, bottom = 8.dp),
+        modifier = Modifier.padding(horizontal = 14.dp).padding(top = 6.dp, bottom = 6.dp),
     )
-    LazyRow(contentPadding = PaddingValues(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+    LazyRow(contentPadding = PaddingValues(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         items(people, key = { it.first.id }) { (p, label) -> PersonTile(p, label, { onOpen(p.id) }) }
     }
 }
