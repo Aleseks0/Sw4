@@ -14,4 +14,4 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "MojeKoreny"
-include(":app", ":gedcom")
+include(":app", ":gedcom", ":sync")

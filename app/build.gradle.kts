@@ -52,7 +52,7 @@ kotlin {
 }
 
 dependencies {
-    implementation(project(":gedcom"))
+    implementation(project(":sync"))
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)
